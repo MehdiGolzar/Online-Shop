@@ -13,6 +13,8 @@ import { UserModule } from './user/user.module';
       port: 5432,
       username: 'postgres',
       password: 'postgres',
+      autoLoadEntities: true,
+      synchronize: true,
     }),
     UserModule,
   ],
