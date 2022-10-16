@@ -1,4 +1,8 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateUserDto } from './dto/request/create-user.dto';
@@ -17,7 +21,10 @@ export class UserService {
     });
 
     if (isExistsUsername) {
-      throw new ConflictException({ message: 'Username already exists' });
+      throw new ConflictException({
+        message: 'Username already exists',
+        status: 409,
+      });
     }
 
     const isExistsEmail = await this.userRepository.findOne({
@@ -25,7 +32,10 @@ export class UserService {
     });
 
     if (isExistsEmail) {
-      throw new ConflictException({ message: 'Email already exists' });
+      throw new ConflictException({
+        message: 'Email already exists',
+        status: 409,
+      });
     }
 
     const isExistsPhoneNumber = await this.userRepository.findOne({
@@ -33,7 +43,10 @@ export class UserService {
     });
 
     if (isExistsPhoneNumber) {
-      throw new ConflictException({ message: 'Phone number already exists' });
+      throw new ConflictException({
+        message: 'Phone number already exists',
+        status: 409,
+      });
     }
 
     const newUser = this.userRepository.create(createUserDto);
@@ -45,8 +58,14 @@ export class UserService {
     return `This action returns all user`;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} user`;
+  async findOne(id: string) {
+    const targetUser = await this.userRepository.findOne({ where: { id } });
+
+    if (!targetUser) {
+      throw new NotFoundException({ message: 'User not found', status: 404 });
+    }
+
+    return targetUser;
   }
 
   update(id: number, updateUserDto: UpdateUserDto) {
