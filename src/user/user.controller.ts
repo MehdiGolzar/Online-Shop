@@ -31,11 +31,12 @@ export class UserController {
   async create(@Body() createUserDto: CreateUserDto) {
     const createdUser = await this.userService.create(createUserDto);
 
-    return new SuccessResponse(
-      new UserDto(createdUser),
-      SharedMessage.SUCCESS_RESPONSE,
-      201,
-    );
+    // return new SuccessResponse(
+    //   new UserDto(createdUser),
+    //   SharedMessage.SUCCESS_RESPONSE,
+    //   201,
+    // );
+    return 'ok'
   }
 
   @Get()

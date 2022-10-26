@@ -1,57 +1,18 @@
-import {
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { CreateUserDto } from './dto/request/create-user.dto';
 import { UpdateUserDto } from './dto/request/update-user.dto';
-import { User } from './entities/user.entity';
+import { UserRepository } from './repository/user.respository';
 
 @Injectable()
 export class UserService {
   constructor(
-    @InjectRepository(User) private readonly userRepository: Repository<User>,
+    @InjectRepository(UserRepository)
+    private readonly userRepository: UserRepository,
   ) {}
 
   async create(createUserDto: CreateUserDto) {
-    const isExistsUsername = await this.userRepository.findOne({
-      where: { username: createUserDto.username },
-    });
-
-    if (isExistsUsername) {
-      throw new ConflictException({
-        message: 'Username already exists',
-        status: 409,
-      });
-    }
-
-    const isExistsEmail = await this.userRepository.findOne({
-      where: { email: createUserDto.email },
-    });
-
-    if (isExistsEmail) {
-      throw new ConflictException({
-        message: 'Email already exists',
-        status: 409,
-      });
-    }
-
-    const isExistsPhoneNumber = await this.userRepository.findOne({
-      where: { phone_number: createUserDto.phone_number },
-    });
-
-    if (isExistsPhoneNumber) {
-      throw new ConflictException({
-        message: 'Phone number already exists',
-        status: 409,
-      });
-    }
-
-    const newUser = this.userRepository.create(createUserDto);
-
-    return this.userRepository.save(newUser);
+    return await this.userRepository.createUser(createUserDto);
   }
 
   findAll() {
