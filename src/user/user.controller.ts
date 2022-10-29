@@ -6,6 +6,7 @@ import {
   Patch,
   Param,
   Delete,
+  HttpStatus,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/request/create-user.dto';
@@ -15,6 +16,7 @@ import { UserDto } from './dto/response/user.dto';
 import { SharedMessage } from 'src/shared/enum/shared-message.enum';
 import { ApiTags, ApiBody, ApiResponse } from '@nestjs/swagger';
 import { UserResponseType } from './dto/response/user-response.dto';
+import { User } from './entities/user.entity';
 
 @ApiTags('User')
 @Controller('user')
@@ -28,15 +30,16 @@ export class UserController {
     type: UserResponseType,
   })
   @Post()
-  async create(@Body() createUserDto: CreateUserDto) {
-    const createdUser = await this.userService.create(createUserDto);
+  async create(
+    @Body() createUserDto: CreateUserDto,
+  ) {
+    await this.userService.create(createUserDto);
 
-    // return new SuccessResponse(
-    //   new UserDto(createdUser),
-    //   SharedMessage.SUCCESS_RESPONSE,
-    //   201,
-    // );
-    return 'ok'
+    return new SuccessResponse(
+      null,
+      SharedMessage.SUCCESS_RESPONSE,
+      HttpStatus.CREATED,
+    );
   }
 
   @Get()
@@ -45,22 +48,35 @@ export class UserController {
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: string) {
+  async findOne(@Param('id') id: string): Promise<SuccessResponse<UserDto>> {
     const targetUser = await this.userService.findOne(id);
 
     return new SuccessResponse(
       new UserDto(targetUser),
       SharedMessage.SUCCESS_RESPONSE,
+      HttpStatus.OK,
     );
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.userService.update(+id, updateUserDto);
+  async update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
+    const updatedUser = await this.userService.update(id, updateUserDto);
+
+    return new SuccessResponse(
+      updatedUser,
+      SharedMessage.SUCCESS_RESPONSE,
+      HttpStatus.OK,
+    );
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.userService.remove(+id);
+  async remove(@Param('id') id: string) {
+    await this.userService.remove(id);
+
+    return new SuccessResponse(
+      null,
+      SharedMessage.SUCCESS_RESPONSE,
+      HttpStatus.OK,
+    );
   }
 }

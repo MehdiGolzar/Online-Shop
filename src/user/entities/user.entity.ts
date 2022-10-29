@@ -20,16 +20,16 @@ export class User {
   @Column({ nullable: false })
   last_name: string;
 
-  @Column({ nullable: false })
+  @Column({ unique: true, nullable: false })
   username: string;
 
   @Column({ nullable: false })
   password: string;
 
-  @Column({ nullable: false })
+  @Column({ unique: true, nullable: false })
   email: string;
 
-  @Column({ nullable: false })
+  @Column({ unique: true, nullable: false })
   phone_number: string;
 
   @DeleteDateColumn()
