@@ -1,5 +1,7 @@
 import {
+  AfterLoad,
   BeforeInsert,
+  BeforeUpdate,
   Column,
   CreateDateColumn,
   DeleteDateColumn,
@@ -7,7 +9,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import bcrypt from 'bcrypt';
+import { genSalt, hash, compare } from 'bcrypt';
 
 @Entity()
 export class User {
@@ -44,10 +46,22 @@ export class User {
   @DeleteDateColumn()
   deletedAt: Date;
 
+  private tempPassword: string;
+  @AfterLoad()
+  private loadTempPassword(): void {
+    this.tempPassword = this.password;
+  }
+
   @BeforeInsert()
+  @BeforeUpdate()
   async hashPassword() {
-    const salt = await bcrypt.genSalt(6);
-    const hashedPassword = await bcrypt.hash(this.password, salt);
-    return (this.password = hashedPassword);
+    if (this.password && this.tempPassword !== this.password) {
+      const salt = await genSalt(6);
+      this.password = await hash(this.password, salt);
+    }
+  }
+
+  compare(password: string) {
+    return compare(password, this.password);
   }
 }
