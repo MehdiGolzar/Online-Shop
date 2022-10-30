@@ -5,10 +5,10 @@ export class UserDto extends BaseResponse {
   id: string;
 
   @ApiProperty({ type: String })
-  first_name: string;
+  firstName: string;
 
   @ApiProperty({ type: String })
-  last_name: string;
+  lastName: string;
 
   @ApiProperty({ type: String })
   username: string;
@@ -17,15 +17,15 @@ export class UserDto extends BaseResponse {
   email: string;
 
   @ApiProperty({ type: String })
-  phone_number: string;
+  phoneNumber: string;
 
   constructor(initial: Partial<UserDto>) {
     super(initial);
     this.id = initial.id;
-    this.first_name = initial.first_name;
-    this.last_name = initial.last_name;
+    this.firstName = initial.firstName;
+    this.lastName = initial.lastName;
     this.username = initial.username;
     this.email = initial.email;
-    this.phone_number = initial.phone_number;
+    this.phoneNumber = initial.phoneNumber;
   }
 }

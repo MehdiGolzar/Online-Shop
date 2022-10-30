@@ -1,5 +1,5 @@
 import {
-  BaseEntity,
+  BeforeInsert,
   Column,
   CreateDateColumn,
   DeleteDateColumn,
@@ -7,37 +7,47 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { DataTypeDefaults } from 'typeorm/driver/types/DataTypeDefaults';
+import bcrypt from 'bcrypt';
 
 @Entity()
 export class User {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ nullable: false })
-  first_name: string;
+  @Column({ type: String, nullable: false })
+  firstName: string;
 
-  @Column({ nullable: false })
-  last_name: string;
+  @Column({ type: String, nullable: false })
+  lastName: string;
 
-  @Column({ unique: true, nullable: false })
+  @Column({ type: String, nullable: false })
   username: string;
 
-  @Column({ nullable: false })
+  @Column({ type: String, nullable: false })
   password: string;
 
-  @Column({ unique: true, nullable: false })
+  @Column({ type: String, nullable: false })
   email: string;
 
-  @Column({ unique: true, nullable: false })
-  phone_number: string;
+  @Column({ type: String, nullable: false })
+  phoneNumber: string;
 
-  @DeleteDateColumn()
-  deleted_at: Date;
+  @Column({ type: Boolean, default: false })
+  isDeleted: boolean;
 
   @CreateDateColumn()
-  created_at: Date;
+  createdAt: Date;
 
   @UpdateDateColumn()
-  updated_at: Date;
+  updatedAt: Date;
+
+  @DeleteDateColumn()
+  deletedAt: Date;
+
+  @BeforeInsert()
+  async hashPassword() {
+    const salt = await bcrypt.genSalt(6);
+    const hashedPassword = await bcrypt.hash(this.password, salt);
+    return (this.password = hashedPassword);
+  }
 }
