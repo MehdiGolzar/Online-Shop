@@ -5,7 +5,7 @@ import { CreateUserDto } from './dto/request/create-user.dto';
 import { UpdateUserDto } from './dto/request/update-user.dto';
 import { User } from './entities/user.entity';
 import { UserErrors } from './enums/user-messages.enum';
-import { UserConflicit } from './user.exceptions';
+import { UserConflicit, UserNotFound } from './user.exceptions';
 
 @Injectable()
 export class UserService {
@@ -14,46 +14,20 @@ export class UserService {
     private readonly userRepository: Repository<User>,
   ) {}
 
-  private async isUserDuplicated(
-    username: string,
-    email: string,
-    phoneNumber: string,
-  ) {
-    const isDuplicated = await this.userRepository.findOne({
-      where: [{ username }, { email }, { phoneNumber }],
-    });
-
-    if (isDuplicated) {
-      if (isDuplicated.username === username) {
-        throw new UserConflicit(UserErrors.USERNAEM_CONFLICT);
-      }
-      if (isDuplicated.email === email) {
-        throw new UserConflicit(UserErrors.EMAIL_CONFLICT);
-      }
-      if (isDuplicated.phoneNumber === phoneNumber) {
-        throw new UserConflicit(UserErrors.phoneNumber_CONFLICT);
-      }
-    } else {
-      return false;
-    }
-  }
-
-  async create(createUserDto: CreateUserDto): Promise<void> {
-    const { firstName, lastName, username, email, phoneNumber, password } =
-      createUserDto;
-
-    await this.isUserDuplicated(username, email, phoneNumber);
-
-    const newUser = this.userRepository.create(createUserDto);
-    await this.userRepository.save(newUser);
-  }
+  create(createUserDto: CreateUserDto) {}
 
   findAll() {
     return `This action returns all user`;
   }
 
-  findOne(id: string) {
-    return `This action return one user`;
+  async findOneById(id: string): Promise<User> {
+    const userFound = await this.userRepository.findOne({ where: { id } });
+
+    if (!userFound) {
+      throw new UserNotFound();
+    }
+
+    return userFound;
   }
 
   update(id: string, updateUserDto: UpdateUserDto) {
