@@ -7,16 +7,20 @@ export class BaseResponse {
   @ApiProperty({ type: Boolean })
   isDeleted: boolean;
 
-  @ApiProperty({ type: Number })
-  create_at: number;
+  @ApiProperty({ type: Date })
+  createdAt: Date;
 
-  @ApiProperty({ type: Number })
-  update_at: number;
+  @ApiProperty({ type: Date })
+  updatedAt: Date;
+
+  @ApiProperty({ type: Date })
+  deletedAt: Date;
 
   constructor(initial?: Partial<BaseResponse>) {
     this.id = initial.id;
     this.isDeleted = initial.isDeleted;
-    this.create_at = initial.create_at;
-    this.update_at = initial.update_at;
+    this.createdAt = initial.createdAt;
+    this.updatedAt = initial.updatedAt;
+    this.deletedAt = initial.deletedAt;
   }
 }
