@@ -4,6 +4,7 @@ export enum SignUpErrors {
   phoneNumber_CONFLICT = 'The phone number entered has already been registered',
 }
 
-export enum SignInErrors {
-  UNAUTHORIZED = 'Unauthorized!, please check your login credentials',
+export enum AuthErrors {
+  LOGIN_FAIL = 'Unauthorized!, Please check your login credentials',
+  UNAUTHORIZED = 'Unauthorized!',
 }
