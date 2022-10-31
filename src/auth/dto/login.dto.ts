@@ -1,13 +1,11 @@
 import {
-  IsEmail,
   IsNotEmpty,
-  IsPhoneNumber,
   IsString,
   Matches,
   MaxLength,
   MinLength,
 } from 'class-validator';
-export class SignInDto {
+export class LoginDto {
   @IsString()
   @IsNotEmpty()
   @MinLength(3)
