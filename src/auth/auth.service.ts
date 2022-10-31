@@ -1,17 +1,21 @@
 import { Injectable } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from 'src/user/entities/user.entity';
 import { Repository } from 'typeorm';
-import { SignInUnauthorized, SignUpConflicit } from './auth.exceptions';
-import { SignInDto } from './dto/signIn.dto';
+import { SignUpConflicit, Unauthorized } from './auth.exceptions';
+import { LoginDto } from './dto/login.dto';
 import { SignUpDto } from './dto/signUp.dto';
-import { SignUpErrors } from './enums/auth-messages.enum';
+import { AuthErrors, SignUpErrors } from './enums/auth-messages.enum';
+import { JwtPayload } from './interfaces/jwt-payload.interface';
+import { JwtToken } from './interfaces/jwt-token.interface';
 
 @Injectable()
 export class AuthService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    private jwtService: JwtService,
   ) {}
 
   private async isUserDuplicate(
@@ -49,21 +53,21 @@ export class AuthService {
     return;
   }
 
-  async signIn(signInDto: SignInDto): Promise<User> {
-    const { username, password } = signInDto;
+  async login(loginDto: LoginDto): Promise<JwtToken> {
+    const { username, password } = loginDto;
 
-    const foundUser = await this.userRepository.findOne({
+    const userFound = await this.userRepository.findOne({
       where: { username },
     });
 
-    const isValidPassword = await foundUser.compare(password);
+    const isValidPassword = await userFound.compare(password);
 
-    if (foundUser && !isValidPassword) {
-      // send token   
+    if (userFound && isValidPassword) {
+      const payload: JwtPayload = { id: userFound.id };
+      const accessToken = await this.jwtService.sign(payload);
+      return { accessToken };
     } else {
-      throw new SignInUnauthorized();
+      throw new Unauthorized(AuthErrors.LOGIN_FAIL);
     }
-
-    return foundUser;
   }
 }
