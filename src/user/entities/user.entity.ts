@@ -25,7 +25,7 @@ export class User {
   @Column({ type: String, nullable: false })
   username: string;
 
-  @Column({ type: String, nullable: false })
+  @Column({ type: String, nullable: false, select: false })
   password: string;
 
   @Column({ type: String, nullable: false })
@@ -47,6 +47,7 @@ export class User {
   deletedAt: Date;
 
   private tempPassword: string;
+
   @AfterLoad()
   private loadTempPassword(): void {
     this.tempPassword = this.password;
