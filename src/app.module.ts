@@ -6,16 +6,17 @@ import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { RedisModule } from '@liaoliaots/nestjs-redis';
+import { ConfigConstant } from './config/config.const';
 
 @Module({
   imports: [
     TypeOrmModule.forRoot({
-      database: 'online-shop',
       type: 'postgres',
-      host: '127.0.0.1',
-      port: 5432,
-      username: 'postgres',
-      password: 'postgres',
+      database: ConfigConstant.postgres.db,
+      host: ConfigConstant.postgres.host,
+      port: ConfigConstant.postgres.port,
+      username: ConfigConstant.postgres.username,
+      password: ConfigConstant.postgres.password,
       autoLoadEntities: true,
       synchronize: true,
     }),
@@ -24,9 +25,9 @@ import { RedisModule } from '@liaoliaots/nestjs-redis';
       inject: [ConfigService],
       useFactory: (_: ConfigService) => ({
         config: {
-          host: '127.0.0.1',
-          port: 6379,
-          name: 'redis',
+          host: ConfigConstant.redis.host,
+          port: ConfigConstant.redis.port,
+          name: ConfigConstant.redis.name,
         },
       }),
     }),
