@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   HttpStatus,
   UnauthorizedException,
@@ -6,7 +7,7 @@ import {
 import { ErrorResponse } from 'src/shared/dto/response/response.dto';
 import { AuthErrors } from './enums/auth-messages.enum';
 
-export class SignUpConflicit extends ConflictException {
+export class Conflicit extends ConflictException {
   constructor(message: string) {
     super(new ErrorResponse(message, HttpStatus.CONFLICT));
   }
@@ -15,5 +16,11 @@ export class SignUpConflicit extends ConflictException {
 export class Unauthorized extends UnauthorizedException {
   constructor(message: string = AuthErrors.UNAUTHORIZED) {
     super(new ErrorResponse(message, HttpStatus.UNAUTHORIZED));
+  }
+}
+
+export class BadRequest extends BadRequestException {
+  constructor(message: string) {
+    super(new ErrorResponse(message, HttpStatus.BAD_REQUEST));
   }
 }
