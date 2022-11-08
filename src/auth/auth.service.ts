@@ -3,8 +3,13 @@ import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from 'src/user/entities/user.entity';
 import { Repository } from 'typeorm';
-import { BadRequest, Conflicit, Unauthorized } from './auth.exceptions';
-import { LoginDto } from './dto/login.dto';
+import {
+  BadRequest,
+  Conflicit,
+  Forbidden,
+  Unauthorized,
+} from './auth.exceptions';
+import { LoginWithPasswordDto } from './dto/login-with-password.dto';
 import { AuthErrors, RegisterErrors } from './enums/auth-messages.enum';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
 import { JwtToken } from './interfaces/jwt-token.interface';
@@ -13,6 +18,7 @@ import { OtpRegisterDto } from './dto/otp-register.dto';
 import { ConfigConstant } from 'src/config/config.const';
 import { RedisProxy } from 'src/shared/proxies/redis.proxy';
 import { OtpVerifyDto } from './dto/otp-verify.dto';
+import { CompleteRegistrationDto } from './dto/complete-registration.dto';
 
 @Injectable()
 export class AuthService {
@@ -23,66 +29,66 @@ export class AuthService {
     private redisProxi: RedisProxy,
   ) {}
 
-  // private async isUserDuplicate(
-  //   username: string,
-  //   email: string,
-  //   phoneNumber: string,
-  // ) {
-  //   const isDuplicated = await this.userRepository.findOne({
-  //     where: [{ username }, { email }, { phoneNumber }],
-  //   });
-
-  //   if (isDuplicated) {
-  //     if (isDuplicated.username === username) {
-  //       throw new Conflicit(SignUpErrors.USERNAEM_CONFLICT);
-  //     }
-  //     if (isDuplicated.email === email) {
-  //       throw new Conflicit(SignUpErrors.EMAIL_CONFLICT);
-  //     }
-  //     if (isDuplicated.phoneNumber === phoneNumber) {
-  //       throw new Conflicit(SignUpErrors.phoneNumber_CONFLICT);
-  //     }
-  //   } else {
-  //     return false;
-  //   }
-  // }
-
-  private async phoneNumberConflictChecker(phoneNumber: string) {
+  private async phoneNumberConflictChecker(phoneNumber: string): Promise<void> {
     const isExistPhoneNumber = await this.userRepository.findOne({
       where: { phoneNumber },
     });
 
     if (isExistPhoneNumber) {
-      throw new Conflicit(RegisterErrors.phoneNumber_CONFLICT);
+      throw new Conflicit(RegisterErrors.PHONE_NUMBER_CONFLICT);
     }
 
-    return false;
+    return;
   }
 
-  // private async confirmByPhoneNumber(phoneNumber: string) {
-  //   const apiKey =
-  //     '6D6A5539734B67676C7365506672586D33665257424E3947526C6A706F43772B466A3650686758465972453D';
-  //   const api = Kavenegar.KavenegarApi({
-  //     apikey: apiKey,
-  //   });
-
-  //   return api.VerifyLookup(
-  //     {
-  //       receptor: '+989129009479',
-  //       token: '123456',
-  //       template: 'Verify',
-  //     },
-  //     function (response, status) {
-  //       return { response, status };
-  //     },
-  //   );
-  // }
-
-  private async verifyCodeGenerator() {
+  private async verifyCodeGenerator(): Promise<number> {
     return Math.floor(100000 + Math.random() * 900000);
   }
 
-  async otpRegister(otpRegisterDto: OtpRegisterDto) {
+  private async verifyCodeSender(phoneNumber: string, verifyCode: number) {
+    const kavenegarApi = Kavenegar.KavenegarApi({
+      apikey: ConfigConstant.smsPanel.apiKey,
+    });
+
+    return kavenegarApi.VerifyLookup(
+      {
+        receptor: phoneNumber,
+        token: verifyCode,
+        template: ConfigConstant.smsPanel.otp.pattern,
+      },
+      function (response, status) {
+        console.log({ response, status });
+
+        return { response, status };
+      },
+    );
+  }
+
+  private async usernameConflictChecker(username: string): Promise<void> {
+    const isExistUsername = await this.userRepository.findOne({
+      where: { username },
+    });
+
+    if (isExistUsername) {
+      throw new Conflicit(RegisterErrors.USERNAEM_CONFLICT);
+    }
+
+    return;
+  }
+
+  private async emailConflictChecker(email: string): Promise<void> {
+    const isExistEmail = await this.userRepository.findOne({
+      where: { email },
+    });
+
+    if (isExistEmail) {
+      throw new Conflicit(RegisterErrors.USERNAEM_CONFLICT);
+    }
+
+    return;
+  }
+
+  async otpRegister(otpRegisterDto: OtpRegisterDto): Promise<void> {
     const { phoneNumber } = otpRegisterDto;
 
     await this.phoneNumberConflictChecker(phoneNumber);
@@ -91,63 +97,126 @@ export class AuthService {
 
     await this.redisProxi.saveVerifyCode(phoneNumber, verifyCode);
 
-    const kavenegarApi = Kavenegar.kavenegarApiI({
-      apikey: ConfigConstant.smsPanel.apiKey,
-    });
-    kavenegarApi.VerifyLookup(
-      {
-        receptor: phoneNumber,
-        token: verifyCode,
-        template: ConfigConstant.smsPanel.otp.pattern,
-      },
-      function (response, status) {
-        return { response, status };
-      },
-    );
+    await this.verifyCodeSender(phoneNumber, verifyCode);
+
+    return;
   }
 
-  async otpVerify(otpVerifyDto: OtpVerifyDto) {
+  async otpVerify(otpVerifyDto: OtpVerifyDto): Promise<void> {
     const { phoneNumber, verifyCode } = otpVerifyDto;
 
-    const savedVerifyCode = await this.redisProxi.readVerifyCode(phoneNumber);
+    const storedVerifyCode = await this.redisProxi.readVerifyCode(phoneNumber);
 
-    if (verifyCode !== savedVerifyCode) {
-      throw new BadRequest(AuthErrors.VERIFICATION_FAILED);
+    if (!storedVerifyCode) {
+      throw new BadRequest(RegisterErrors.VERIFICATION_FAILED);
     }
 
-    return 'ok';
+    if (verifyCode !== storedVerifyCode) {
+      throw new BadRequest(RegisterErrors.VERIFICATION_FAILED);
+    }
+
+    await this.redisProxi.saveTemporaryUser(phoneNumber);
+
+    return;
   }
 
-  async completeRegistration() {}
+  async completeRegistration(
+    completeRegistrationDto: CompleteRegistrationDto,
+  ): Promise<void> {
+    const { phoneNumber, username, email } = completeRegistrationDto;
 
-  // async signUp(signUpDto: SignUpDto): Promise<void> {
-  //   const { username, email, phoneNumber } = signUpDto;
+    const isVerifiedUser = await this.redisProxi.readTemporaryUser(phoneNumber);
 
-  //   await this.isUserDuplicate(username, email, phoneNumber);
-  //   //redis
-  //   await this.confirmByPhoneNumber(phoneNumber);
-  //   //
-  //   // const newUser = this.userRepository.create(signUpDto);
-  //   // await this.userRepository.save(newUser);
+    if (!Boolean(isVerifiedUser)) {
+      throw new Forbidden(RegisterErrors.TEMPORARY_USER_NOT_EXISTS);
+    }
 
-  //   // return;
-  // }
+    await this.redisProxi.deleteVerifyCode(phoneNumber);
 
-  async login(loginDto: LoginDto): Promise<JwtToken> {
-    const { username, password } = loginDto;
+    await this.usernameConflictChecker(username);
+
+    if (!!email) {
+      await this.emailConflictChecker(email);
+    }
+
+    const newUser = this.userRepository.create(completeRegistrationDto);
+
+    await this.userRepository.save(newUser);
+
+    await this.redisProxi.deleteTemporaryUser(phoneNumber);
+
+    return;
+  }
+
+  async loginWithPassword(
+    loginWithPasswordDto: LoginWithPasswordDto,
+  ): Promise<JwtToken> {
+    const { username, phoneNumber, email, password } = loginWithPasswordDto;
 
     const userFound = await this.userRepository.findOne({
-      where: { username },
+      where: [{ username }, { phoneNumber }, { email }],
     });
+
+    if (!userFound) {
+      throw new Unauthorized(AuthErrors.LOGIN_FAIL);
+    }
 
     const isValidPassword = await userFound.compare(password);
 
-    if (userFound && isValidPassword) {
-      const payload: JwtPayload = { id: userFound.id };
-      const accessToken = await this.jwtService.sign(payload);
-      return { accessToken };
-    } else {
+    if (!isValidPassword) {
       throw new Unauthorized(AuthErrors.LOGIN_FAIL);
     }
+
+    const payload: JwtPayload = { id: userFound.id };
+    const accessToken = this.jwtService.sign(payload);
+
+    return { accessToken };
+  }
+
+  async loginWithPhoneNumber(otpRegisterDto: OtpRegisterDto): Promise<void> {
+    const { phoneNumber } = otpRegisterDto;
+
+    const userFound = await this.userRepository.findOne({
+      where: { phoneNumber },
+    });
+
+    if (!userFound) {
+      throw new Unauthorized(AuthErrors.PHONE_NUMBER_NOT_REGISTERED);
+    }
+
+    const verifyCode = await this.verifyCodeGenerator();
+
+    await this.redisProxi.saveVerifyCode(phoneNumber, verifyCode);
+
+    await this.verifyCodeSender(phoneNumber, verifyCode);
+
+    return;
+  }
+
+  async verifyLoginWithPhoneNumber(otpVerifyDto: OtpVerifyDto) {
+    const { phoneNumber, verifyCode } = otpVerifyDto;
+
+    const userFound = await this.userRepository.findOne({
+      where: { phoneNumber },
+    });
+
+    if (!userFound) {
+      throw new Unauthorized(AuthErrors.PHONE_NUMBER_NOT_REGISTERED);
+    }
+
+    const storedVerifyCode = await this.redisProxi.readVerifyCode(phoneNumber);
+
+    if (!storedVerifyCode) {
+      throw new BadRequest(RegisterErrors.VERIFICATION_FAILED);
+    }
+
+    if (verifyCode !== storedVerifyCode) {
+      throw new BadRequest(RegisterErrors.VERIFICATION_FAILED);
+    }
+
+    const payload: JwtPayload = { id: userFound.id };
+    const accessToken = this.jwtService.sign(payload);
+
+    return { accessToken };
   }
 }
