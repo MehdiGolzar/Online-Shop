@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   HttpStatus,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -22,5 +23,11 @@ export class Unauthorized extends UnauthorizedException {
 export class BadRequest extends BadRequestException {
   constructor(message: string) {
     super(new ErrorResponse(message, HttpStatus.BAD_REQUEST));
+  }
+}
+
+export class Forbidden extends ForbiddenException {
+  constructor(message: string) {
+    super(new ErrorResponse(message, HttpStatus.FORBIDDEN));
   }
 }

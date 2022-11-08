@@ -1,7 +1,7 @@
 import {
-  IsInt,
   IsNotEmpty,
   IsPhoneNumber,
+  IsString,
   MaxLength,
   MinLength,
 } from 'class-validator';
@@ -11,7 +11,7 @@ export class OtpVerifyDto {
   @IsNotEmpty()
   phoneNumber: string;
 
-  @IsInt()
+  @IsString()
   @MinLength(6)
   @MaxLength(6)
   verifyCode: string;

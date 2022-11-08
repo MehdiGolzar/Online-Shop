@@ -6,6 +6,7 @@ import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 import { JwtStrategy } from './jwt.strategy';
 import { ConfigConstant } from 'src/config/config.const';
+import { RedisProxy } from 'src/shared/proxies/redis.proxy';
 
 @Module({
   imports: [
@@ -17,7 +18,7 @@ import { ConfigConstant } from 'src/config/config.const';
     UserModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy],
+  providers: [AuthService, JwtStrategy, RedisProxy],
   exports: [JwtStrategy, PassportModule],
 })
 export class AuthModule {}

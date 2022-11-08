@@ -28,7 +28,7 @@ const env = load({
 
   POSTGRES_PORT: {
     type: Number,
-    default: 5435,
+    default: 5432,
   },
 
   POSTGRES_USERNAME: {
@@ -69,7 +69,12 @@ const env = load({
 
   SMS_PANEL_OTP_EXPIRE_TIME: {
     type: Number,
-    default: 2 * 60,
+    default: 60 * 60 * 24 * 30,
+  },
+
+  TEMPORARY_USER_EXPIRE_TIME: {
+    type: Number,
+    default: 60 * 1, // 1 minute
   },
 
   SUPER_ADMIN_USERNAME: {
@@ -119,6 +124,8 @@ export class ConfigConstant {
       expireTime: env.SMS_PANEL_OTP_EXPIRE_TIME,
     },
   };
+
+  static readonly temporaryUserExpireTime = env.TEMPORARY_USER_EXPIRE_TIME;
 
   static readonly superAdmin = {
     username: env.SUPER_ADMIN_USERNAME,

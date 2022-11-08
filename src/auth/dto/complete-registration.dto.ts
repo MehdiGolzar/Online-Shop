@@ -1,6 +1,8 @@
 import {
   IsEmail,
   IsNotEmpty,
+  IsOptional,
+  IsPhoneNumber,
   IsString,
   Matches,
   MaxLength,
@@ -25,10 +27,15 @@ export class CompleteRegistrationDto {
 
   @IsEmail()
   @IsNotEmpty()
-  email: string;
+  @IsOptional()
+  email?: string;
 
   @MinLength(8)
   @MaxLength(32)
   @Matches(/((?=.*\d)|(?=.*\W+))(?![.\n])(?=.*[A-Z])(?=.*[a-z]).*$/)
   password: string;
+
+  @IsPhoneNumber('IR')
+  @IsNotEmpty()
+  phoneNumber: string;
 }
